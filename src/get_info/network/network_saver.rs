@@ -321,8 +321,9 @@ async fn initialize_network_state_and_offset(
     }
 
     // 3. Handle reboot: if boot ID changed, invalidate the offset from the file.
-    let is_reboot =
-        cfg!(target_os = "linux") && !new_boot_id.is_empty() && network_info.boot_id != new_boot_id;
+    let is_reboot = cfg!(any(target_os = "linux", target_os = "android"))
+        && !new_boot_id.is_empty()
+        && network_info.boot_id != new_boot_id;
     if is_reboot {
         info!("System reboot detected. Invalidating saved offset.");
         network_info.offset_tx = i64::MIN + 1;
@@ -481,9 +482,9 @@ async fn save_network_info(file: &mut File, info: &NetworkInfo) -> Result<(), st
     Ok(())
 }
 
-/// Gets the boot ID from the kernel. Returns an empty string on non-Linux or on error.
+/// Gets the boot ID from the kernel. Returns an empty string on non-Linux/Android or on error.
 fn get_boot_id() -> String {
-    if cfg!(target_os = "linux") {
+    if cfg!(any(target_os = "linux", target_os = "android")) {
         fs::read_to_string("/proc/sys/kernel/random/boot_id")
             .map(|s| s.trim().to_string())
             .unwrap_or_else(|e| {

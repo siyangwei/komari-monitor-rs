@@ -1,0 +1,85 @@
+name: Android Build
+
+# 仅用于 Android 目标的交叉编译（默认构建 ureq 版本；
+# nyquest 的 curl 后端无法方便地交叉编译到 Android，故不在此构建）
+# 最低支持 Android 7.0（API 24）：bionic 从 API 23 起提供 openpty、
+# API 24 起提供 getifaddrs/freeifaddrs（sysinfo 网卡采集与 PTY 终端依赖）
+
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - "*"
+  workflow_dispatch:
+
+jobs:
+  android-release:
+    name: Build - ${{ matrix.platform.release_for }}
+    strategy:
+      matrix:
+        platform:
+          - release_for: android_aarch64
+            target: aarch64-linux-android
+            ndk_clang: aarch64-linux-android
+            binary_name: komari-monitor-rs-android-aarch64
+          - release_for: android_armv7
+            target: armv7-linux-androideabi
+            ndk_clang: armv7a-linux-androideabi
+            binary_name: komari-monitor-rs-android-armv7
+          - release_for: android_x86_64
+            target: x86_64-linux-android
+            ndk_clang: x86_64-linux-android
+            binary_name: komari-monitor-rs-android-x86_64
+          - release_for: android_x86
+            target: i686-linux-android
+            ndk_clang: i686-linux-android
+            binary_name: komari-monitor-rs-android-x86
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust Toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.platform.target }}
+      - name: Install Android NDK
+        uses: nttld/setup-ndk@v1.4.2
+        id: setup-ndk
+        with:
+          ndk-version: r27c
+          add-to-path: false
+      - name: Configure Cargo linker
+        run: |
+          NDK_TOOLCHAIN="${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          UPPER_TARGET=$(echo "${{ matrix.platform.target }}" | tr '[:lower:]-' '[:upper:]_')
+          CLANG="$NDK_TOOLCHAIN/${{ matrix.platform.ndk_clang }}24-clang"
+          cat >> "$GITHUB_ENV" <<EOF
+          CARGO_TARGET_${UPPER_TARGET}_LINKER=$CLANG
+          CC_${UPPER_TARGET}=$CLANG
+          AR_${UPPER_TARGET}=$NDK_TOOLCHAIN/llvm-ar
+          EOF
+      - name: Build binary
+        run: cargo build --target ${{ matrix.platform.target }} --features ureq-support --profile minimal --jobs 32 --locked
+      - name: Rename binary
+        run: cp target/${{ matrix.platform.target }}/minimal/komari-monitor-rs target/${{ matrix.platform.target }}/minimal/${{ matrix.platform.binary_name }}
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform.target }}
+          path: target/${{ matrix.platform.target }}/minimal/${{ matrix.platform.binary_name }}
+      - name: Publish to GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            target/${{ matrix.platform.target }}/minimal/${{ matrix.platform.binary_name }}
+          tag_name: latest # 使用固定的标签名称作为发布版本号
+          body: |
+            Note: All Release operations will publish the Binary and software packages here
+            Latest release for Commit: ${{ github.sha }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

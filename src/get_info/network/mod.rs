@@ -2,7 +2,7 @@ use crate::data_struct::Connections;
 use log::trace;
 use sysinfo::Networks;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod netlink;
 pub mod network_saver;
 
@@ -88,7 +88,7 @@ mod imp {
 
 pub use imp::{realtime_network, update_traffic_offset};
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn realtime_connections() -> Connections {
     use netlink::connections_count_with_protocol;
     let tcp4 =
@@ -138,7 +138,7 @@ pub fn realtime_connections() -> Connections {
     connections
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "windows")))]
+#[cfg(not(any(target_os = "linux", target_os = "android", target_os = "windows")))]
 pub fn realtime_connections() -> Connections {
     let connections = Connections { tcp: 0, udp: 0 };
     trace!(

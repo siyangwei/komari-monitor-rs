@@ -95,7 +95,7 @@ fn netlink_inet_diag_only_count(request: &[u8]) -> io::Result<u64> {
             request.len(),
             0,
             &addr as *const sockaddr_nl as *const sockaddr,
-            size_of::<sockaddr_nl>() as u32,
+            size_of::<sockaddr_nl>() as libc::socklen_t,
         )
     };
     if ret < 0 {
