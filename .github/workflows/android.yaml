@@ -24,18 +24,18 @@ jobs:
             target: aarch64-linux-android
             ndk_clang: aarch64-linux-android
             binary_name: komari-monitor-rs-android-aarch64
-          - release_for: android_armv7
-            target: armv7-linux-androideabi
-            ndk_clang: armv7a-linux-androideabi
-            binary_name: komari-monitor-rs-android-armv7
-          - release_for: android_x86_64
-            target: x86_64-linux-android
-            ndk_clang: x86_64-linux-android
-            binary_name: komari-monitor-rs-android-x86_64
-          - release_for: android_x86
-            target: i686-linux-android
-            ndk_clang: i686-linux-android
-            binary_name: komari-monitor-rs-android-x86
+          # - release_for: android_armv7
+          #   target: armv7-linux-androideabi
+          #   ndk_clang: armv7a-linux-androideabi
+          #   binary_name: komari-monitor-rs-android-armv7
+          # - release_for: android_x86_64
+          #   target: x86_64-linux-android
+          #   ndk_clang: x86_64-linux-android
+          #   binary_name: komari-monitor-rs-android-x86_64
+          # - release_for: android_x86
+          #   target: i686-linux-android
+          #   ndk_clang: i686-linux-android
+          #   binary_name: komari-monitor-rs-android-x86
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
