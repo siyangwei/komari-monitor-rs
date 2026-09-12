@@ -55,6 +55,12 @@ jobs:
           NDK_TOOLCHAIN="${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin"
           UPPER_TARGET=$(echo "${{ matrix.platform.target }}" | tr '[:lower:]-' '[:upper:]_')
           CLANG="$NDK_TOOLCHAIN/${{ matrix.platform.ndk_clang }}24-clang"
+
+          # cc-rs 按 <target>-clang 的名称在 PATH 中查找，创建软链接 + 加入 PATH
+          ln -sf "$CLANG" "$NDK_TOOLCHAIN/${{ matrix.platform.target }}-clang"
+          ln -sf "$CLANG" "$NDK_TOOLCHAIN/${{ matrix.platform.target }}-clang++"
+          echo "$NDK_TOOLCHAIN" >> "$GITHUB_PATH"
+                    
           cat >> "$GITHUB_ENV" <<EOF
           CARGO_TARGET_${UPPER_TARGET}_LINKER=$CLANG
           CC_${UPPER_TARGET}=$CLANG
